@@ -435,14 +435,21 @@ function changelogs() {
         --date=short "${_author}" "$_since" "$_until" $_log_options $_pathspec \
         | sort -u -r | head -n $_limit \
         | while read DATE; do
-              day=$(format_date "$DATE" "%A" "%Y-%m-%d")
-              echo -e "\n[$DATE - $day]"
-              GIT_PAGER=cat git -c log.showSignature=false log \
-                                --use-mailmap $_merges \
-                                --format=" * %s (%aN)" "${_author}" \
-                                --since==$(date -d "$DATE - 1 day" +"%Y-%m-%d") --until=$next
-              next=$DATE
-          done
+            day=$(format_date "$DATE" "%A" "%Y-%m-%d")
+            commits=$(git -c log.showSignature=false log \
+                --use-mailmap $_merges \
+                --format=" * %s (%aN)" "${_author}" \
+                --since="$DATE 00:00:00" --until="$DATE 23:59:59" \
+                --date-order)
+
+            if [[ -n "$commits" ]]; then
+                echo -e "\n[$DATE - $day]"
+                echo "$commits"
+            else
+                echo "No commits found on $DATE"
+            fi
+            next=$DATE
+        done
 }
 
 ################################################################################
